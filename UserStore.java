@@ -29,7 +29,7 @@ public class UserStore {
 			System.out.println("============================================================================");
 			System.out.println("= 1) Search for products                                                   =");
 			System.out.println("= 2) Create new order                                                      =");//PRICE DISCOUNT NEEDS TO BE CALCULATED
-			System.out.println("= 3) Edit account information                                              =");//delete method!!!
+			System.out.println("= 3) Edit account information                                              =");
 			System.out.println("= 4) Log off                                                               =");
 			System.out.println("============================================================================");
 			
@@ -378,6 +378,7 @@ public class UserStore {
 				String c = sc.next();
 				if(c == "y"){
 					//call method to delete tuple
+					deleteAccount();
 					return true;
 				}
 				else{
@@ -393,6 +394,23 @@ public class UserStore {
 		}
 		
 		return false;
+	}
+	
+	public void deleteAccount(){
+		Statement stmt = null;
+	    String update = "DELETE FROM  project.user WHERE email = '" + email + "'";
+
+	    try {
+	        stmt = con.createStatement();
+	        stmt.executeUpdate(update);
+	        
+	    } catch (SQLException e ) {
+	    	e.printStackTrace();
+	    } finally {
+	        if (stmt != null) { 
+	        	try { stmt.close();} catch (SQLException e) {} 
+	        }
+	    }
 	}
 	
 	//method to edit "name", "address", "email", "password"

@@ -28,11 +28,11 @@ public class StaffStore {
 		int input = 0;
 		while(input != 6){
 			System.out.println("============================================================================");
-			System.out.println("= 1) Add a user/product/category/discount.                                 =");//also add product shelf info...
-			System.out.println("= 2) Update a user/product/category/discount.                              =");//todo
+			System.out.println("= 1) Add a user/product/category/discount.                                 =");//also add product shelf/supplier info...
+			System.out.println("= 2) Update a user/product/category/discount.                              =");
 			System.out.println("= 3) Delete a user/product/category/discount.                              =");
-			System.out.println("= 4) Get order product locations.                                          =");//todo
-			System.out.println("= 5) View low product alerts.                                              =");//fix the trigger thing
+			System.out.println("= 4) Get order product locations.                                          =");
+			System.out.println("= 5) View low product alerts.                                              =");//triggerS add - delete from table on update
 			System.out.println("= 6) Log off.                                                              =");
 			System.out.println("============================================================================");
 			
@@ -48,7 +48,7 @@ public class StaffStore {
 				add();
 			}
 			else if(input == 2){
-				//update()
+				update();
 			}
 			else if(input == 3){
 				delete();
@@ -60,7 +60,7 @@ public class StaffStore {
 				
 			}
 			else if(input == 6){
-				
+				System.out.println("Logging off...\n");
 			}
 			else{
 				System.out.println("Invalid Selection.\n");
@@ -252,10 +252,10 @@ public class StaffStore {
 	}
 	
 	public void getLocation(){
-		System.out.println("Enter the order ID that you want the shelf loaction(s) for");
+		System.out.print("Enter the order ID that you want the shelf loactions for: ");
 		int id = sc.nextInt();
 		//get the product IDs of the order
-		ArrayList<Integer> arr = new ArrayList<>();
+		ArrayList<Integer> intArr = new ArrayList<>();
 		Statement stmt = null;
 	    String query = "SELECT product_id " +
 	                   "FROM project.orderdata " +
@@ -264,7 +264,7 @@ public class StaffStore {
 	        stmt = con.createStatement();
 	        ResultSet rs = stmt.executeQuery(query);
 	        while (rs.next()) {
-	        	arr.add(rs.getInt("product_id"));
+	        	intArr.add(rs.getInt("product_id"));
 	        }
 	        
 	    } catch (SQLException e ) {
@@ -274,7 +274,151 @@ public class StaffStore {
 	        	try { stmt.close();} catch (SQLException e) {}
 	        }
 	    }
-	    //now get the locations of the products
+	    //now get the locations of those products and the names of the products
+	    System.out.println("Location\tProduct Name");
+	    for(int pid : intArr){
+	    	stmt = null;
+		    query = "SELECT shelf.location, product.name " +
+		            "FROM project.shelf, project.product " +
+		            "WHERE shelf.product_id = '" + pid + "' AND product.id = '" + pid + "'";
+		    try {
+		        stmt = con.createStatement();
+		        ResultSet rs = stmt.executeQuery(query);
+		        while (rs.next()) {
+		        	System.out.print(rs.getString("shelf.location") + "\t\t");
+		        	System.out.println(rs.getString("product.name"));
+		        }
+		        
+		    } catch (SQLException e ) {
+		    	e.printStackTrace();
+		    } finally {
+		        if (stmt != null) { 
+		        	try { stmt.close();} catch (SQLException e) {}
+		        }
+		    }
+	    }
+	}
+	
+	public void update(){
+		int input = 0;
+		while(input != 5){
+			System.out.println("============================================================================");
+			System.out.println("= 1) Update a user                                                         ="); 
+			System.out.println("= 2) Update a product                                                      =");
+			System.out.println("= 3) Update a category                                                     =");
+			System.out.println("= 4) Update a discount                                                     =");
+			System.out.println("= 5) Exit Update                                                           =");
+			System.out.println("============================================================================");
+			
+			if(sc.hasNextInt()){
+				input = sc.nextInt();
+			}
+			else{
+				sc.nextLine();
+				System.out.println("Please enter and number 1-5");
+			}
+			String attribute = "";
+			String update = "";
+			String newInfo = "";
+			if(input == 1){//Update user
+				//ask for the attribute name and the value to create the update string, then call single update method
+				System.out.println("Enter the user ID you want to update.");
+				int id = sc.nextInt();
+				sc.nextLine();
+				//loop until a correct attribute name has been given
+				boolean loop = true;
+				while(loop){
+					System.out.println("What do you want to update: 'address', 'name', 'password', 'email', 'is_staff'");
+					attribute = sc.nextLine();
+					if(attribute.equals("name") || attribute.equals("address") || attribute.equals("password") || attribute.equals("email") || attribute.equals("is_staff")){
+						loop = false;
+					}
+				}
+				System.out.println("Enter the value you want to change the attribute to.");
+				newInfo = sc.nextLine();
+				update = "UPDATE project.user SET " + attribute + " = '" + newInfo + "' " +
+	    				 "WHERE id = '" + id + "'";
+				update(update);
+			}
+			else if(input == 2){//Update product
+				System.out.println("Enter the product ID you want to update.");
+				int id = sc.nextInt();
+				sc.nextLine();
+				//loop until a correct attribute name has been given
+				boolean loop = true;
+				while(loop){
+					System.out.println("What do you want to update: 'active', 'description', 'name', 'price', 'stock_quantity', 'category_id'");
+					attribute = sc.nextLine();
+					if(attribute.equals("active") || attribute.equals("description") || attribute.equals("name") || attribute.equals("price") || attribute.equals("stock_quantity") || attribute.equals("category_id")){
+						loop = false;
+					}
+				}
+				System.out.println("Enter the value you want to change the attribute to.");
+				newInfo = sc.nextLine();
+				update = "UPDATE project.product SET " + attribute + " = '" + newInfo + "' " +
+	    				 "WHERE id = '" + id + "'";
+				update(update);
+			}
+			else if(input == 3){//Update category
+				System.out.println("Enter the category ID you want to update.");
+				int id = sc.nextInt();
+				sc.nextLine();
+				//loop until a correct attribute name has been given
+				boolean loop = true;
+				while(loop){
+					System.out.println("What do you want to update: 'name', 'parent', 'description'");
+					attribute = sc.nextLine();
+					if(attribute.equals("name") || attribute.equals("parent") || attribute.equals("description")){
+						loop = false;
+					}
+				}
+				System.out.println("Enter the value you want to change the attribute to.");
+				newInfo = sc.nextLine();
+				update = "UPDATE project.category SET " + attribute + " = '" + newInfo + "' " +
+	    				 "WHERE id = '" + id + "'";
+				update(update);
+			}
+			else if(input == 4){//Update discount
+				System.out.println("Enter the discount ID you want to update.");
+				int id = sc.nextInt();
+				sc.nextLine();
+				//loop until a correct attribute name has been given
+				boolean loop = true;
+				while(loop){
+					System.out.println("What do you want to update: 'value', 'name', 'product_id', 'category_id'");
+					attribute = sc.nextLine();
+					if(attribute.equals("name") || attribute.equals("value") || attribute.equals("product_id") || attribute.equals("category_id")){
+						loop = false;
+					}
+				}
+				System.out.println("Enter the value you want to change the attribute to.");
+				newInfo = sc.nextLine();
+				update = "UPDATE project.discount SET " + attribute + " = '" + newInfo + "' " +
+	    				 "WHERE id = '" + id + "'";
+				update(update);
+			}
+			else if(input == 5){//exit
+				System.out.println("Returning...");
+			}
+			else{
+				System.out.println("Invalid Selection.");
+			}
+		}
+	}
+	
+	public void update(String update){
+		Statement stmt = null;
 	    
+	    try {
+	        stmt = con.createStatement();
+	        stmt.executeUpdate(update);
+	       
+	    } catch (SQLException e ) {
+	    	e.printStackTrace();
+	    } finally {
+	        if (stmt != null) { 
+	        	try { stmt.close();} catch (SQLException e) {} 
+	        }
+	    }
 	}
 }
