@@ -409,7 +409,7 @@ public class UserStore {
 		for(int i = 0; i < id.length; i++){
 			Statement stmt = null;
 			String update = "UPDATE project.product SET stock_quantity = stock_quantity - " + quantity[i] + " " +
-					 		"WHERE id = '" + id + "'";
+					 		"WHERE id = '" + id[i] + "'";
 		    try {
 		        stmt = con.createStatement();
 		        stmt.executeUpdate(update);
