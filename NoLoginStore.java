@@ -20,6 +20,9 @@ public class NoLoginStore {
 			System.out.println("============================================================================");
 			System.out.println("= 1) Search for products                                                   =");
 			System.out.println("= 2) Leave Search                                                          =");
+			System.out.println("=                                                                          =");
+			System.out.println("= *Please note, product prices do not reflect current discounts.           =");
+			System.out.println("= *Discounted prices will be calculated when products are added to cart.   =");
 			System.out.println("============================================================================");
 			
 			if(sc.hasNextInt()){

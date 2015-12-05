@@ -75,6 +75,9 @@ public class UserStore {
 			System.out.println("= 2) Search by Product Name                                                =");
 			System.out.println("= 3) Search by Product Category                                            =");
 			System.out.println("= 4) Exit Search                                                           =");
+			System.out.println("=                                                                          =");
+			System.out.println("= *Please note, product prices do not reflect current discounts.           =");
+			System.out.println("= *Discounted prices will be calculated when products are added to cart.   =");
 			System.out.println("============================================================================");
 			
 			if(sc.hasNextInt()){
@@ -308,28 +311,129 @@ public class UserStore {
 	
 	public void createOrder(){
 		//order products by entering the id and quantity
-		System.out.println("Enter Product ID Number: ");
+		System.out.println("Enter the number of products that you want to order: ");
 		while(!sc.hasNextInt()){
 			sc.nextLine();
 			System.out.println("Please enter a vaild integer quantity.");
 		}
-		int id = sc.nextInt();
+		int num = sc.nextInt();
+		//add the desired products to the cart
+		int[] idCart = new int[num];
+		int[] qCart = new int[num];
+		float[] priceCart = new float[num];
 		
-		System.out.println("Enter Quantity: ");   //create cart class that holds order data add to the cart until want to checkout
-		while(!sc.hasNextInt()){                  //then get order number (max orderID + 1
-			sc.nextLine();                        //insert cart data to the appropriate tables (order + order_data)
-			System.out.println("Please enter a vaild integer quantity.");
+		for(int i = 0; i < num; i++){
+			System.out.println("Enter Product ID Number: ");
+			while(!sc.hasNextInt()){
+				sc.nextLine();
+				System.out.println("Please enter a vaild integer quantity.");
+			}
+			idCart[i] = sc.nextInt();
+			
+			System.out.println("Enter Quantity: "); 
+			while(!sc.hasNextInt()){                  
+				sc.nextLine();                        
+				System.out.println("Please enter a vaild integer quantity.");
+			}
+			qCart[i] = sc.nextInt();
+			//calculate the total price with the discounts for each item
+			priceCart[i] = priceAfterDiscount(idCart[i]) * qCart[i];
 		}
-		int q = sc.nextInt();
-		
-		Statement stmt = null;
-	    //String insert = "INSERT INTO project.user (address, name, password, email, is_staff) " + 
-	    //				"VALUES ('" + address + "', '" + name + "', '" + pass + "', '" + email + "', 'n')";
+		//sum up prices to get the total
+		float totalPrice = 0;
+		for(float p : priceCart){
+			totalPrice += p;
+		}
+		//check if order can be fulfilled if not exit order
+		boolean valid = isOrderValid(idCart, qCart);
+		if(valid){
+			//Show user order and finalize if they don't approve cont will be false
+			boolean cont = showUserOrder(idCart, qCart, priceCart, totalPrice);
+			if(cont){
+				//insert cart data to the appropriate tables (order + order_data)
+				insertOrder(qCart, idCart, totalPrice, "yes");
+				
+				//update the products to reflect the reduction in stock
+				updateStock(idCart, qCart);
+			}
+		}
+	}
+	
+	public boolean isOrderValid(int[] id, int[] quantity){
+		//check product table to see if the quantity ordered is available for each product
+		for(int i = 0; i < id.length; i++){
+			int numAvailable = 0;
+			Statement stmt = null;
+		    String query = "SELECT stock_quantity " +
+		                   "FROM project.product " +
+		                   "WHERE id = " + id[i];
+		    try {
+		        stmt = con.createStatement();
+		        ResultSet rs = stmt.executeQuery(query);
+		        while (rs.next()) {
+		        	numAvailable = rs.getInt("stock_quantity");
+		        }
+		        
+		    } catch (SQLException e ) {
+		    	e.printStackTrace();
+		    } finally {
+		        if (stmt != null) { 
+		        	try { stmt.close();} catch (SQLException e) {}
+		        }
+		    }
+		    if((numAvailable - quantity[i]) < 0){
+		    	return false;
+		    }
+		}
+		return true;
+	}
+	
+	public boolean showUserOrder(int[] id, int[] quantity, float[] price, float totalPrice){
+		//print formatted order to customer and ask them to confirm the order or to cancel it
+		System.out.println("Product ID\tQuantity\tPrice");
+		for(int i = 0; i < id.length; i++){
+			System.out.println(id[i] + "\t" + quantity[i] + "\t" + price[i]);
+		}
+		System.out.println("Total Price: $" + totalPrice);
+		System.out.println("\nWould you like to continue with this order? (y/n)");
+		char c = sc.nextLine().charAt(0);
+		if(c == 'y'){
+			return true;
+		}
+		System.out.println("Canceling Order...\n");
+		return false;
+	}
+	
+	public void updateStock(int[] id, int[] quantity){
+		//reduce the stock in the products table according to how many of each were bought
+		for(int i = 0; i < id.length; i++){
+			Statement stmt = null;
+			String update = "UPDATE project.product SET stock_quantity = stock_quantity - " + quantity[i] + " " +
+					 		"WHERE id = '" + id + "'";
+		    try {
+		        stmt = con.createStatement();
+		        stmt.executeUpdate(update);
+		       
+		    } catch (SQLException e ) {
+		    	e.printStackTrace();
+		    } finally {
+		        if (stmt != null) { 
+		        	try { stmt.close();} catch (SQLException e) {} 
+		        }
+		    }
+		}
+	}
+	
+	public void insertOrder(int[] prodID, int[] quantity, float totalPrice, String paid){
+		int orderID = getOrderNumber();
+		String date = "GET DATE";
 
+		Statement stmt = null;
+	    String insert = "INSERT INTO project.order_ (id, total_price, date, paid, user_id) " + 
+	    				"VALUES ('" + orderID + "', '" + totalPrice + "', '" + date + "', '" + paid + "', '" + getUserID() + "')";
 	    try {
 	        stmt = con.createStatement();
-	        //stmt.executeUpdate(insert);
-	        //if successful no error is thrown
+	        stmt.executeUpdate(insert);
 	    } catch (SQLException e ) {
 	    	e.printStackTrace();
 	    } finally {
@@ -337,6 +441,116 @@ public class UserStore {
 	        	try { stmt.close();} catch (SQLException e) {} 
 	        }
 	    }
+	    
+	    for(int i = 0; i < prodID.length; i++){
+	    	stmt = null;
+		    insert = "INSERT INTO project.orderdata (id, product_id, quantity) " + 
+		    		 "VALUES ('" + orderID + "', '" + prodID[i] + "', '" + quantity[i] + "')";
+		    try {
+		        stmt = con.createStatement();
+		        stmt.executeUpdate(insert);
+		    } catch (SQLException e ) {
+		    	e.printStackTrace();
+		    } finally {
+		        if (stmt != null) { 
+		        	try { stmt.close();} catch (SQLException e) {} 
+		        }
+		    }
+	    }
+	}
+	
+	public int getOrderNumber(){
+		//get order number (max orderID + 1)
+		Statement stmt = null;
+	    String query = "SELECT MAX(id) FROM project.order_ ";
+	    int id = 0;
+	    try {
+	        stmt = con.createStatement();
+	        ResultSet rs = stmt.executeQuery(query);
+
+	        while (rs.next()) {
+	        	id = rs.getInt(1);
+	        }
+	    } catch (SQLException e ) {
+	    	e.printStackTrace();
+	    } finally {
+	    	if (stmt != null) { 
+	        	try { stmt.close();} catch (SQLException e) {}
+	        } 
+	    }
+		
+		return id + 1;
+	}
+	
+	public float priceAfterDiscount(int id){
+		//first get price, then calculate it after any product discounts
+		Statement stmt = null;
+	    String query = "SELECT product.price - ((product.price * discount.value)/100) " + 
+	    			   "FROM project.product, project.discount " + 
+	    			   "WHERE product.id = " + id + " AND discount.product_id = " + id;
+	    float price = 0;
+	    try {
+	        stmt = con.createStatement();
+	        ResultSet rs = stmt.executeQuery(query);
+
+	        while (rs.next()) {
+	        	//price after product discount
+	        	price = rs.getFloat(1);
+	        }
+	    } catch (SQLException e) {
+	    	e.printStackTrace();
+	    } finally {
+	    	if (stmt != null) { 
+	        	try { stmt.close();} catch (SQLException e) {}
+	        }
+	    }
+		//next calculate price after any category discounts
+	    stmt = null;
+	    query = "SELECT discount.value " +  
+	    		"FROM project.product, project.discount " + 
+	    		"WHERE product.id = " + id + " AND discount.product_id = product.id";
+	   int catDiscount = 0;
+	    try {
+	        stmt = con.createStatement();
+	        ResultSet rs = stmt.executeQuery(query);
+
+	        while (rs.next()) {
+	        	catDiscount = rs.getInt(1);
+	        }
+	    } catch (SQLException e ) {
+	    	e.printStackTrace();
+	    } finally {
+	    	if (stmt != null) { 
+	        	try { stmt.close();} catch (SQLException e) {}
+	        } 
+	    }
+	    price = (price - ((price * catDiscount)/100));
+	  //return the total price after the discounts
+		return price;
+	}
+	
+	public int getUserID(){
+		int id = 0;
+		Statement stmt = null;
+	    String query = "SELECT id " +
+	                   "FROM project.user " + 
+	                   "WHERE email = '" + email + "'";
+	    try {
+	        stmt = con.createStatement();
+	        ResultSet rs = stmt.executeQuery(query);
+
+	        while (rs.next()) {
+	        	id = rs.getInt("id");
+	        }
+	    } catch (SQLException e ) {
+	    	e.printStackTrace();
+	    } finally {
+	    	if (stmt != null) { 
+	        	try { stmt.close();} catch (SQLException e) {}
+	        } 
+	    }
+	    
+		return id;
 	}
 	
 	//returns true if account was deleted

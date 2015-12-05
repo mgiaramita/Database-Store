@@ -31,9 +31,10 @@ public class StaffStore {
 			System.out.println("= 1) Add a user/product/category/discount.                                 =");//also add product shelf/supplier info...
 			System.out.println("= 2) Update a user/product/category/discount.                              =");
 			System.out.println("= 3) Delete a user/product/category/discount.                              =");
-			System.out.println("= 4) Get order product locations.                                          =");
-			System.out.println("= 5) View low product alerts.                                              =");//triggerS add - delete from table on update
-			System.out.println("= 6) Log off.                                                              =");
+			System.out.println("= 4) Get total sales for each supplier.                                    =");//todo
+			System.out.println("= 5) Get order product locations.                                          =");
+			System.out.println("= 6) View low product alerts.                                              =");//triggerS add - delete from table on update
+			System.out.println("= 7) Log off.                                                              =");
 			System.out.println("============================================================================");
 			
 			if(sc.hasNextInt()){
@@ -41,7 +42,7 @@ public class StaffStore {
 			}
 			else{
 				sc.nextLine();
-				System.out.println("Please enter and number 1-6");
+				System.out.println("Please enter and number 1-7");
 			}
 			
 			if(input == 1){
@@ -54,12 +55,15 @@ public class StaffStore {
 				delete();
 			}
 			else if(input == 4){
-				getLocation();
+				//todo
 			}
 			else if(input == 5){
-				
+				getLocation();
 			}
 			else if(input == 6){
+				getAlert();
+			}
+			else if(input == 7){
 				System.out.println("Logging off...\n");
 			}
 			else{
@@ -420,5 +424,31 @@ public class StaffStore {
 	        	try { stmt.close();} catch (SQLException e) {} 
 	        }
 	    }
+	}
+	
+	public void getAlert(){
+		System.out.println("Current Low Products\n");
+		System.out.println("ID\tName\tQuantity");
+		Statement stmt = null;
+	    String query = "SELECT id, name, stock_quantity " +
+	                   "FROM project.lowstockalert ";
+	    try {
+	        stmt = con.createStatement();
+	        ResultSet rs = stmt.executeQuery(query);
+
+	        while (rs.next()) {
+	        	int ID = rs.getInt("id");
+	            String name = rs.getString("name");
+	            int quantity = rs.getInt("stock_quantity"); 
+	            System.out.println(ID + "\t" + name + "\t" + quantity);
+	        }
+	    } catch (SQLException e ) {
+	    	e.printStackTrace();
+	    } finally {
+	    	if (stmt != null) { 
+	        	try { stmt.close();} catch (SQLException e) {}
+	        } 
+	    }
+	    System.out.println("");
 	}
 }
