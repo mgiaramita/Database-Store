@@ -1,3 +1,4 @@
+import java.util.Date;
 import java.util.Scanner;
 import java.util.ArrayList;
 import java.sql.*;
@@ -28,7 +29,7 @@ public class UserStore {
 		while(input != 4){
 			System.out.println("============================================================================");
 			System.out.println("= 1) Search for products                                                   =");
-			System.out.println("= 2) Create new order                                                      =");//PRICE DISCOUNT NEEDS TO BE CALCULATED
+			System.out.println("= 2) Create new order                                                      =");
 			System.out.println("= 3) Edit account information                                              =");
 			System.out.println("= 4) Log off                                                               =");
 			System.out.println("============================================================================");
@@ -350,13 +351,27 @@ public class UserStore {
 			//Show user order and finalize if they don't approve cont will be false
 			boolean cont = showUserOrder(idCart, qCart, priceCart, totalPrice);
 			if(cont){
-				//insert cart data to the appropriate tables (order + order_data)
-				insertOrder(qCart, idCart, totalPrice, "yes");
+				float remainder = payOrder(totalPrice);
+				if(remainder <= 0){
+					//insert cart data to the appropriate tables (order + order_data)
+					insertOrder(qCart, idCart, totalPrice, "yes");
+				}
+				else{
+					insertOrder(qCart, idCart, totalPrice, "no");
+				}
 				
 				//update the products to reflect the reduction in stock
 				updateStock(idCart, qCart);
 			}
 		}
+	}
+	
+	public float payOrder(float totalPrice){
+		System.out.println("Amount Due: $" + totalPrice);
+		System.out.print("Please input the amount you are paying: ");
+		float payment = sc.nextFloat();
+		
+		return totalPrice - payment;
 	}
 	
 	public boolean isOrderValid(int[] id, int[] quantity){
@@ -392,10 +407,11 @@ public class UserStore {
 		//print formatted order to customer and ask them to confirm the order or to cancel it
 		System.out.println("Product ID\tQuantity\tPrice");
 		for(int i = 0; i < id.length; i++){
-			System.out.println(id[i] + "\t" + quantity[i] + "\t" + price[i]);
+			System.out.println(id[i] + "\t\t" + quantity[i] + "\t\t" + price[i]);
 		}
 		System.out.println("Total Price: $" + totalPrice);
 		System.out.println("\nWould you like to continue with this order? (y/n)");
+		sc.nextLine();
 		char c = sc.nextLine().charAt(0);
 		if(c == 'y'){
 			return true;
@@ -426,7 +442,12 @@ public class UserStore {
 	
 	public void insertOrder(int[] prodID, int[] quantity, float totalPrice, String paid){
 		int orderID = getOrderNumber();
-		String date = "GET DATE";
+		//get the date for the order
+		long ms = System.currentTimeMillis();
+		Date d1 = new Date(ms);
+		String str = d1.toString();
+		String[] d = str.split(" ");
+		String date = d[1] + " " + d[2] + ", " + d[5];
 
 		Statement stmt = null;
 	    String insert = "INSERT INTO project.order_ (id, total_price, date, paid, user_id) " + 

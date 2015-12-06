@@ -26,14 +26,14 @@ public class StaffStore {
 		pass = user_pass;
 		
 		int input = 0;
-		while(input != 6){
+		while(input != 7){
 			System.out.println("============================================================================");
 			System.out.println("= 1) Add a user/product/category/discount.                                 =");//also add product shelf/supplier info...
 			System.out.println("= 2) Update a user/product/category/discount.                              =");
 			System.out.println("= 3) Delete a user/product/category/discount.                              =");
-			System.out.println("= 4) Get total sales for each supplier.                                    =");//todo
+			System.out.println("= 4) Get total sales for each supplier.                                    =");
 			System.out.println("= 5) Get order product locations.                                          =");
-			System.out.println("= 6) View low product alerts.                                              =");//triggerS add - delete from table on update
+			System.out.println("= 6) View low product alerts.                                              =");
 			System.out.println("= 7) Log off.                                                              =");
 			System.out.println("============================================================================");
 			
@@ -55,7 +55,7 @@ public class StaffStore {
 				delete();
 			}
 			else if(input == 4){
-				//todo
+				getSupplierSales();
 			}
 			else if(input == 5){
 				getLocation();
@@ -128,6 +128,8 @@ public class StaffStore {
 				insert = "INSERT INTO project.product (active, description, name, price, stock_quantity, category_id) " + 
 	    		   		 "VALUES ('" + ac + "', '" + de + "', '" + nm + "', '" + pr + "', '" + sq + "', '" + id + "')";
 				add(insert);
+				addShelf();
+				addSupplier();
 			}
 			else if(input == 3){//add category
 				sc.nextLine();
@@ -186,6 +188,14 @@ public class StaffStore {
 	        	try { stmt.close();} catch (SQLException e) {} 
 	        }
 	    }
+	}
+	
+	public void addShelf(){
+		//............................
+	}
+	
+	public void addSupplier(){
+		//............................
 	}
 	
 	public void delete(){
@@ -428,10 +438,10 @@ public class StaffStore {
 	
 	public void getAlert(){
 		System.out.println("Current Low Products\n");
-		System.out.println("ID\tName\tQuantity");
+		System.out.println("ID\tName\t\tQuantity");
 		Statement stmt = null;
 	    String query = "SELECT id, name, stock_quantity " +
-	                   "FROM project.lowstockalert ";
+	                   "FROM project.lowstockalert";
 	    try {
 	        stmt = con.createStatement();
 	        ResultSet rs = stmt.executeQuery(query);
@@ -450,5 +460,50 @@ public class StaffStore {
 	        } 
 	    }
 	    System.out.println("");
+	}
+	
+	public void getSupplierSales(){
+		ArrayList<String> sName = new ArrayList<>();
+		ArrayList<Integer> sID = new ArrayList<>();
+		Statement stmt = null;
+	    String query = "SELECT id, name " +
+	                   "FROM project.supplier";
+	    try {
+	        stmt = con.createStatement();
+	        ResultSet rs = stmt.executeQuery(query);
+
+	        while (rs.next()) {
+	        	sID.add(rs.getInt("id"));
+	            sName.add(rs.getString("name"));
+	        }
+	    } catch (SQLException e ) {
+	    	e.printStackTrace();
+	    } finally {
+	    	if (stmt != null) { 
+	        	try { stmt.close();} catch (SQLException e) {}
+	        } 
+	    }
+	    System.out.println("Supplier\tProducts Sold");
+	    for(int i = 0; i < sName.size(); i++){
+	    	System.out.print(sName.get(i) + "\t");
+	    	stmt = null;
+		    query = "SELECT SUM(orderdata.quantity) " +
+		            "FROM project.orderdata, project.supplierdata " +
+		    		"WHERE orderdata.product_id = supplierdata.product_id AND supplierdata.id = " + sID.get(i);
+		    try {
+		        stmt = con.createStatement();
+		        ResultSet rs = stmt.executeQuery(query);
+
+		        while (rs.next()) {
+		        	System.out.print(rs.getInt(1) + "\n");
+		        }
+		    } catch (SQLException e ) {
+		    	e.printStackTrace();
+		    } finally {
+		    	if (stmt != null) { 
+		        	try { stmt.close();} catch (SQLException e) {}
+		        } 
+		    }
+	    }
 	}
 }
