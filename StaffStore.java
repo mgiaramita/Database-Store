@@ -28,7 +28,7 @@ public class StaffStore {
 		int input = 0;
 		while(input != 7){
 			System.out.println("============================================================================");
-			System.out.println("= 1) Add a user/product/category/discount.                                 =");//also add product shelf/supplier info...
+			System.out.println("= 1) Add a user/product/category/discount.                                 =");
 			System.out.println("= 2) Update a user/product/category/discount.                              =");
 			System.out.println("= 3) Delete a user/product/category/discount.                              =");
 			System.out.println("= 4) Get total sales for each supplier.                                    =");
@@ -128,8 +128,9 @@ public class StaffStore {
 				insert = "INSERT INTO project.product (active, description, name, price, stock_quantity, category_id) " + 
 	    		   		 "VALUES ('" + ac + "', '" + de + "', '" + nm + "', '" + pr + "', '" + sq + "', '" + id + "')";
 				add(insert);
-				addShelf();
-				addSupplier();
+				int ID = getProdID(de, nm, Float.parseFloat(pr), Integer.parseInt(sq), Integer.parseInt(id));
+				addShelf(Integer.parseInt(sq), ID);
+				addSupplier(ID);
 			}
 			else if(input == 3){//add category
 				sc.nextLine();
@@ -190,12 +191,126 @@ public class StaffStore {
 	    }
 	}
 	
-	public void addShelf(){
-		//............................
+	public void addShelf(int sq, int id){
+		System.out.print("New shelf name for product: ");
+		String name = sc.nextLine();
+		System.out.print("Shelf loaction: ");
+		String loc = sc.nextLine();
+		Statement stmt = null;
+		String insert = "INSERT INTO project.shelf (name, available_quantity, location, product_id) " + 
+		   		 "VALUES ('" + name + "', '" + sq + "', '" + loc + "', '" + id + "')";
+	    try {
+	        stmt = con.createStatement();
+	        stmt.executeUpdate(insert);
+	        //if successful no error is thrown
+	    } catch (SQLException e ) {
+	    	e.printStackTrace();
+	    } finally {
+	        if (stmt != null) { 
+	        	try { stmt.close();} catch (SQLException e) {} 
+	        }
+	    }
 	}
 	
-	public void addSupplier(){
-		//............................
+	public void addSupplier(int prodID){
+		System.out.println("Product from a new supplier (y) or an existing supplier (n)?");
+		char input = sc.nextLine().charAt(0);
+		if(input == 'y'){
+			System.out.print("Enter the supplier name: ");
+			String name = sc.nextLine();
+			String insert = "INSERT INTO project.supplier (name) " + 
+	   		 		"VALUES ('" + name + "')";
+			Statement stmt = null;
+		    try {
+		        stmt = con.createStatement();
+		        stmt.executeUpdate(insert);
+		    } catch (SQLException e ) {
+		    	e.printStackTrace();
+		    } finally {
+		    	if (stmt != null) { 
+		    		try { stmt.close();} catch (SQLException e) {} 
+		        }
+		    }
+		    int id = getSupplierID(name);
+		    
+		    insert = "INSERT INTO project.supplierdata (id, product_id) " + 
+	   		 		"VALUES ('" + id + "', '" + prodID + "')";
+			stmt = null;
+		    try {
+		        stmt = con.createStatement();
+		        stmt.executeUpdate(insert);
+		    } catch (SQLException e ) {
+		    	e.printStackTrace();
+		    } finally {
+		        if (stmt != null) { 
+		        	try { stmt.close();} catch (SQLException e) {} 
+		        }
+		    }
+		}
+		else{
+			System.out.print("Enter the supplier ID: ");
+			int id = sc.nextInt();
+			String insert = "INSERT INTO project.supplierdata (id, product_id) " + 
+			   		 		"VALUES ('" + id + "', '" + prodID + "')";
+			Statement stmt = null;
+		    try {
+		        stmt = con.createStatement();
+		        stmt.executeUpdate(insert);
+		        //if successful no error is thrown
+		    } catch (SQLException e ) {
+		    	e.printStackTrace();
+		    } finally {
+		        if (stmt != null) { 
+		        	try { stmt.close();} catch (SQLException e) {} 
+		        }
+		    }
+		}
+	}
+	
+	public int getSupplierID(String name){
+		int ID = 0;
+		Statement stmt = null;
+	    String query = "SELECT id " +
+	                   "FROM project.supplier " +
+	                   "WHERE name = '" + name + "'";
+	    try {
+	        stmt = con.createStatement();
+	        ResultSet rs = stmt.executeQuery(query);
+	        while (rs.next()) {
+	        	ID = rs.getInt("id");
+	        }
+	        
+	    } catch (SQLException e ) {
+	    	e.printStackTrace();
+	    } finally {
+	        if (stmt != null) { 
+	        	try { stmt.close();} catch (SQLException e) {}
+	        }
+	    }
+	    return ID;
+	}
+	
+	public int getProdID(String de, String nm, float pr, int sq, int id){
+		int ID = 0;
+		Statement stmt = null;
+	    String query = "SELECT id " +
+	                   "FROM project.product " +
+	                   "WHERE description = '" + de + "' AND name = '" + nm + "' AND price = '" + pr + "' AND stock_quantity = '" + sq + "' AND category_id = '" + id + "'";
+	    try {
+	        stmt = con.createStatement();
+	        ResultSet rs = stmt.executeQuery(query);
+	        while (rs.next()) {
+	        	ID = rs.getInt("id");
+	        }
+	        
+	    } catch (SQLException e ) {
+	    	e.printStackTrace();
+	    } finally {
+	        if (stmt != null) { 
+	        	try { stmt.close();} catch (SQLException e) {}
+	        }
+	    }
+	    return ID;
 	}
 	
 	public void delete(){
