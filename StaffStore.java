@@ -156,7 +156,7 @@ public class StaffStore {
 				String pi = sc.nextLine();
 				System.out.print("Category ID (enter null if product discount): ");
 				String ci = sc.nextLine();
-				if(ci == "null"){
+				if(ci.equals("null")){
 					insert = "INSERT INTO project.category (value, name, product_id) " + 
 		    		   		 "VALUES ('" + va + "', '" + nm + "', '" + pi + "')";
 				}

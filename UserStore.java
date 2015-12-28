@@ -611,7 +611,7 @@ public class UserStore {
 			else if(select == 5){
 				System.out.println("Are you sere that you want to delete your account? y/n");
 				String c = sc.next();
-				if(c == "y"){
+				if(c.equals("y")){
 					//call method to delete tuple
 					deleteAccount();
 					return true;
@@ -650,13 +650,13 @@ public class UserStore {
 	
 	//method to edit "name", "address", "email", "password"
 	public void editUserInfo(String info){
-		if(info == "name"){
+		if(info.equals("name")){
 			System.out.println("Please enter the new name: ");
 		}
-		else if(info == "address"){
+		else if(info.equals("address")){
 			System.out.println("Please enter the new address: ");
 		}
-		else if(info == "email"){
+		else if(info.equals("email")){
 			System.out.println("Please enter the new email: ");
 		}
 		else{//info == "password"
@@ -674,10 +674,10 @@ public class UserStore {
 	        stmt.executeUpdate(update);
 	        
 	        //If email of password is changed the global copies need to be updated
-		    if(info == "email"){
+		    if(info.equals("email")){
 		    	email = newInfo;
 		    }
-		    else if(info == "password"){
+		    else if(info.equals("password")){
 		    	pass = newInfo;
 		    }
 	    } catch (SQLException e ) {
