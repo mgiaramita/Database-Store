@@ -1,0 +1,43 @@
+CREATE TABLE user (id INT PRIMARY KEY AUTO_INCREMENT, address VARCHAR(80), name VARCHAR(25), password VARCHAR(50), email VARCHAR(30), is_staff CHAR(1) );
+
+CREATE TABLE order_ (id INT PRIMARY KEY, total_price FLOAT, date VARCHAR(30), paid CHAR(3), user_id INT );
+
+CREATE TABLE orderdata (id INT, product_id INT, quantity INT, AutoInc PRIMARY KEY AUTO_INCREMENT );
+
+CREATE TABLE product (id INT PRIMARY KEY AUTO_INCREMENT, active CHAR(3), description VARCHAR(250), name VARCHAR(20), price FLOAT, stock_quantity INT, category_id INT );
+
+CREATE TABLE discount (id INT PRIMARY KEY AUTO_INCREMENT, value INT, name VARCHAR(20), product_id INT, category_id INT );
+
+CREATE TABLE category (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(20), parent VARCHAR(20), description VARCHAR(100) );
+
+CREATE TABLE supplier (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(20) );
+
+CREATE TABLE supplierdata (id INT, product_id INT, AutoInc PRIMARY KEY AUTO_INCREMENT );
+
+CREATE TABLE shelf (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(20), available_quantity INT, location VARCHAR(80), product_id INT );
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+AFTER UPDATE ON `product` 
+FOR EACH ROW
+BEGIN
+	IF (new.stock_quantity < 5)
+    THEN DELETE FROM lowstockalert where id = new.id;
+	END IF;
+    IF (new.stock_quantity < 5)
+	THEN INSERT INTO lowstockalert 
+		VALUES(new.id, new.active, new.description, new.name, new.price, new.stock_quantity, new.category_id);
+    END IF;
+    IF (new.stock_quantity > 4)
+    THEN DELETE FROM lowstockalert where id = new.id;
+	END IF;
+END
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+AFTER DELETE ON `product` FOR EACH ROW
+BEGIN
+	DELETE FROM lowstockalert where id = OLD.id;
+END
+
+
